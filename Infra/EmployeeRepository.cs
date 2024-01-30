@@ -12,9 +12,14 @@ namespace WebApi.Infra
             _Context.SaveChanges();
         }
 
-        public List<Employee> Get()
+        public List<Employee> Get(int pageNumber, int pageQuantity)
         {
-            return _Context.Employees.ToList();
+            return _Context.Employees.Skip(pageNumber * pageQuantity).Take(pageQuantity).ToList();
+        }
+
+        public Employee? Get(int id)
+        {
+            return _Context.Employees.Find(id);
         }
     }
 }

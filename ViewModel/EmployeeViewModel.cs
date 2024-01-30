@@ -4,5 +4,6 @@
     {
         public string Name { get; set; }
         public int age { get; set; }
+        public IFormFile photo { get; set; }
     }
 }
