@@ -1,7 +1,7 @@
 ﻿using Microsoft.AspNetCore.Mvc;
-using WebApi.Services;
+using WebApi.Application.Services;
 
-namespace WebApi.Controllers
+namespace WebApi.Domain.Controllers
 {
     [ApiController]
     [Route("api/v1/auth")]

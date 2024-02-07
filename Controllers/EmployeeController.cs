@@ -1,7 +1,10 @@
-﻿using Microsoft.AspNetCore.Authorization;
+﻿using AutoMapper;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using WebApi.Model;
-using WebApi.ViewModel;
+using Microsoft.IdentityModel.Tokens;
+using WebApi.Application.ViewModel;
+using WebApi.Domain.DTO;
+using WebApi.Domain.Model;
 
 namespace WebApi.Controllers
 {
@@ -10,10 +13,12 @@ namespace WebApi.Controllers
     public class EmployeeController : ControllerBase
     {
         private readonly IEmployeeRepository _employeeRepository;
+        private readonly IMapper _mapper;
 
-        public EmployeeController(IEmployeeRepository employeeRepository)
+        public EmployeeController(IEmployeeRepository employeeRepository, IMapper mapper)
         {
             _employeeRepository = employeeRepository ?? throw new ArgumentNullException();
+            _mapper = mapper;
         }
 
         [Authorize]
@@ -37,17 +42,35 @@ namespace WebApi.Controllers
         public IActionResult DownloadPhoto(int id)
         {
             var employee = _employeeRepository.Get(id);
-
+            
+            if (employee.photo.IsNullOrEmpty()) 
+            {
+                return Ok("Usuario sem foto");
+            }
+            
             var databytes = System.IO.File.ReadAllBytes(employee.photo);
 
             return File(databytes, "image/png");
         }
 
+        [Authorize]
         [HttpGet]
         public IActionResult Get(int pageNumber, int pageQuantity)
         {
             var employees = _employeeRepository.Get(pageNumber, pageQuantity);
             return Ok(employees);
+        }
+
+        [Authorize]
+        [HttpGet]
+        [Route("{id}")]
+        public IActionResult Search(int id)
+        {
+            var employees = _employeeRepository.Get(id);
+
+            var employeeDTO = _mapper.Map<EmployeeDTO>(employees);
+
+            return Ok(employeeDTO);
         }
     }
 }
