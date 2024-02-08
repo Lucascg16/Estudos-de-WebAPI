@@ -1,4 +1,5 @@
-﻿using AutoMapper;
+﻿using Asp.Versioning;
+using AutoMapper;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.IdentityModel.Tokens;
@@ -6,10 +7,11 @@ using WebApi.Application.ViewModel;
 using WebApi.Domain.DTO;
 using WebApi.Domain.Model;
 
-namespace WebApi.Controllers
+namespace WebApi.Controllers.V1
 {
+    [ApiVersion(1.0)]
     [ApiController]
-    [Route("api/V1/employee")]
+    [Route("api/V{version:apiVersion}/employee")]
     public class EmployeeController : ControllerBase
     {
         private readonly IEmployeeRepository _employeeRepository;
@@ -23,10 +25,10 @@ namespace WebApi.Controllers
 
         [Authorize]
         [HttpPost]
-        public IActionResult Add([FromForm]EmployeeViewModel employeeView)
+        public IActionResult Add([FromForm] EmployeeViewModel employeeView)
         {
             var filePath = Path.Combine("Storage", employeeView.photo.FileName);
-            
+
             using Stream fileStream = new FileStream(filePath, FileMode.Create);
             employeeView.photo.CopyTo(fileStream);
 
@@ -42,12 +44,12 @@ namespace WebApi.Controllers
         public IActionResult DownloadPhoto(int id)
         {
             var employee = _employeeRepository.Get(id);
-            
-            if (employee.photo.IsNullOrEmpty()) 
+
+            if (employee.photo.IsNullOrEmpty())
             {
                 return Ok("Usuario sem foto");
             }
-            
+
             var databytes = System.IO.File.ReadAllBytes(employee.photo);
 
             return File(databytes, "image/png");

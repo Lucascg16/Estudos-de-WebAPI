@@ -1,8 +1,10 @@
+using Asp.Versioning.ApiExplorer;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
 using System.Text;
 using WebApi.Application.Mapping;
+using WebApi.Application.Swagger;
 using WebApi.Domain.Model;
 using WebApi.Infra.Repositories;
 
@@ -15,9 +17,20 @@ builder.Services.AddControllers();
 builder.Services.AddAutoMapper(typeof(DomainToDTOMapping));
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
 builder.Services.AddEndpointsApiExplorer();
+
+builder.Services.AddApiVersioning()
+    .AddMvc()
+    .AddApiExplorer(setup =>
+    {
+        setup.GroupNameFormat = "'v'VVV";
+        setup.SubstituteApiVersionInUrl = true;
+    });
+
+builder.Services.ConfigureOptions<ConfigureSwaggerGenOptions>();
+
 builder.Services.AddSwaggerGen(c =>
 {
-    //c.OperationFilter<SwaggerDefaultValues>();
+    c.OperationFilter<SwaggerDefaultValues>();
 
     c.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
     {
@@ -29,23 +42,25 @@ builder.Services.AddSwaggerGen(c =>
 
     c.AddSecurityRequirement(new OpenApiSecurityRequirement()
     {
-    {
-        new OpenApiSecurityScheme
         {
-        Reference = new OpenApiReference
+            new OpenApiSecurityScheme
             {
-            Type = ReferenceType.SecurityScheme,
-            Id = "Bearer"
-            },
-            Scheme = "oauth2",
-            Name = "Bearer",
-            In = ParameterLocation.Header,
+            Reference = new OpenApiReference
+                {
+                Type = ReferenceType.SecurityScheme,
+                Id = "Bearer"
+                },
+                Scheme = "oauth2",
+                Name = "Bearer",
+                In = ParameterLocation.Header,
 
-        },
-        new List<string>()
+            },
+            new List<string>()
         }
     });
 });
+
+//Injecao de dependencia
 builder.Services.AddTransient<IEmployeeRepository, EmployeeRepository>();
 
 var key = Encoding.ASCII.GetBytes(WebApi.Key.secret);
@@ -73,7 +88,14 @@ if (app.Environment.IsDevelopment())
 {
     app.UseExceptionHandler("/error-development");
     app.UseSwagger();
-    app.UseSwaggerUI();
+    app.UseSwaggerUI(options =>
+    {
+        var version = app.Services.GetRequiredService<IApiVersionDescriptionProvider>();
+        foreach (var description in version.ApiVersionDescriptions)
+        {
+            options.SwaggerEndpoint($"/swagger/{description.GroupName}/swagger.json", $"Web Api - {description.GroupName.ToUpper()}");
+        }
+    });
 }
 else
 {
